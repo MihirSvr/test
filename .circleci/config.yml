@@ -36,6 +36,8 @@ jobs:
 
   android-build-and-test:
     working_directory: ~/test/android
+    docker:
+      - image: circleci/android:api-29-node
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
