@@ -41,4 +41,7 @@ jobs:
 workflows:
   say-hello-workflow:
     jobs:
-      - build
+      - node
+      - android-build-and-test:
+          requires:
+            - node
