@@ -4,7 +4,8 @@ version: 2.1
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  build:
+  node:
+    working_directory: ~/test
     # Specify the execution environment.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     docker:
@@ -15,17 +16,26 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: dependency-cache-{{ checksum "package-lock.json" }}
+          key: yarn-v1-{{ checksum "yarn.lock" }}-{{ arch }}
+      - restore_cache:
+          key: node-v1-{{ checksum "package.json" }}-{{ arch }}
       - run:
           name: Install Dependencies
-          command: npm install
+          command: yarn install
       - save_cache:
-          key: dependency-cache-{{ checksum "package-lock.json" }}
+          key: yarn-v1-{{ checksum "yarn.lock" }}-{{ arch }}
           paths:
-            - ./node_modules
+            - ~/.cache/yarn
+      - save_cache:
+          key: node-v1-{{ checksum "package.json" }}-{{ arch }}
+          paths:
+            - node_modules
       - run:
           name: Run tests
-          command: npm run test
+          command: yarn run test
+
+  android-build-and-test:
+    working_directory: ~/test/android
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:

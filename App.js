@@ -85,6 +85,7 @@ const App = () => {
           </Section>
           <LearnMoreLinks />
         </View>
+
       </ScrollView>
     </SafeAreaView>
   );
