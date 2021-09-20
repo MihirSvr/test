@@ -9,7 +9,7 @@ import {
 const App = () => {
   return (
     <SafeAreaView style={styles.container}>
-      <View style={{ height: 10, backgroundColor: 'red', width: 20 }} onStartShouldSetResponder={() => alert('Loop')}>
+      <View style={{ height: 10, backgroundColor: 'red', width: 20 }} onStartShouldSetResponder={() => alert('Test')} >
 
       </View>
     </SafeAreaView>
