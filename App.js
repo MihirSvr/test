@@ -8,6 +8,7 @@
 
 import React from 'react';
 import {
+  Button,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -83,6 +84,7 @@ const App = () => {
             Read the docs to discover what to do next:
           </Section>
           <LearnMoreLinks />
+          <Button color="red" title='test' />
         </View>
       </ScrollView>
     </SafeAreaView>
