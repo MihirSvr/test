@@ -66,6 +66,4 @@ workflows:
   node-android-ios:
     jobs:
       - node
-      - android-build-and-test:
-          requires:
-            - node
+      
