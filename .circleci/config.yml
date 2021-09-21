@@ -5,7 +5,7 @@ version: 2.1
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
   node:
-    working_directory: ~/test
+    working_directory: ~/project
     # Specify the execution environment.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     docker:
@@ -27,7 +27,7 @@ jobs:
     ios_defaults: &ios_defaults
       working_directory: ~/project/ios
       macos:
-          xcode: "9.1.0"
+          xcode: "12.1"
       environment:
         - LANG: "en_US.UTF-8"
         # This is important for Fastlane because we create keychain base on this
