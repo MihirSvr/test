@@ -3,8 +3,9 @@
 version: 2.1
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
-  defaults: defaults
-    working_directory: ~/project
+jobs:
+  node:
+    working_directory: ~/test
     # Specify the execution environment.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     docker:
@@ -12,229 +13,57 @@ version: 2.1
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     
-    android_defaults: android_defaults
-      working_directory: ~/project/android
-      docker:
-        - image: farwayer/react-native
-      environment:
-        # This configuration works best for our project, but you might want to experiment here a little
-        - LANG: "en_US.UTF-8"
-        - _JAVA_OPTIONS: "-Xms518m -Xmx2048m"
-        - GRADLE_OPTS: '-Dorg.gradle.jvmargs="-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError"'
-        - BUILD_THREADS: 2
-
-    ios_defaults: ios_defaults
-      working_directory: ~/project/ios
-      macos:
-          xcode: "12.1"
-      environment:
-        - LANG: "en_US.UTF-8"
-        # This is important for Fastlane because we create keychain base on this
-        - MATCH_KEYCHAIN_NAME: "circle"
-        - MATCH_KEYCHAIN_PASSWORD: "circle"
-
-  jobs:
-    # let's install our project's dependenices...
-    install-dependencies:
-      <<: *defaults
-      steps:
-        - checkout
-        - attach_workspace:
-            at: ~/project
-        # ...restore cache if there is any...
-        - restore_cache:
-            keys:
-            - v1-0-dependencies-{{ checksum "package.json" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-0-dependencies-
-        # ... of not run yarn...
-        - run:
-            name: Install Dependencies
-            command: yarn
-        # ... cache the dependencies...
-        - save_cache:
-            key: v1-0-dependencies-{{ checksum "package.json" }}
-            paths:
-              - node_modules
-              - yarn.lock
-        # ...and persist to the workplace, because we want to access this within the workflows (other jobs, etc.)
-        - persist_to_workspace:
-            root: .
-            paths: .
-    # Introduce Flow job – let's staticaly check our code...
-    flow:
-      <<: *defaults
-      steps:
-        - attach_workspace:
-            at: ~/project
-        - run: yarn flow
-    # Let's check the code style as well...
-    lint:
-      <<: *defaults
-      steps:
-        - attach_workspace:
-          at: ~/project
-        - run: yarn lint
-    # Hell yeah! WE HAVE PLENTY OF THEM...
-    unit-tests:
-      <<: *defaults
-      steps:
-        - attach_workspace:
-            at: ~/project
-        - restore_cache:
-            keys:
-            - v1-0-jest-cache-{{ checksum "package.json" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-0-jest-cache-
-        - run: yarn test:ci
-        - save_cache:
-            key: v1-0-jest-cache-{{ checksum "package.json" }}
-            paths:
-              - .jestCache
-        - persist_to_workspace:
-            root: .
-            paths: .
-
-  ##
-  # This part is little bit tricky but still it's not a rocket sience...
-  #
-    ios-beta:
-    <<: *ios_defaults 
     steps:
-      # Attach to workplace (there are our saved node_modules)...
-      - attach_workspace:
-          at: ~/project
-      # Install CocoaPod for managing our iOS native dependencies... 
+      - checkout
+      - restore_cache:
+          key: yarn-v1-{{ checksum "yarn.lock" }}-{{ arch }}
+      - restore_cache:
+          key: node-v1-{{ checksum "package.json" }}-{{ arch }}
       - run:
-          name: Install CocoaPod Spec 
-          command: curl https://cocoapods-specs.circleci.com/fetch-cocoapods-repo-from-s3.sh | bash -s cf
-      # Install Fastlane...
+          name: Install Dependencies
+          command: yarn install
+      - save_cache:
+          key: yarn-v1-{{ checksum "yarn.lock" }}-{{ arch }}
+          paths:
+            - ~/.cache/yarn
+      - save_cache:
+          key: node-v1-{{ checksum "package.json" }}-{{ arch }}
+          paths:
+            - node_modules
       - run:
-          name: Install Ruby and Fastlane
-          command: |
-           brew install ruby
-           gem install fastlane
-      # Install our native dependencies...
-      - run:
-          name: Update CocaPods dependencies
-          command: pod install --verbose
-          timeout: 1200
-      # Update Fastlane (Fastane plugins, namely appcenter plugin)
-      - run:
-          name: Bundle update
-          command: bundle update
-      # Run our iOS deploy task
-      - run:
-          name: Fastlane
-          command: bundle exec fastlane beta 
-  ## 
-  # Let's do almost the same for Android...
-  # It could be worth it to create custom tailored Docker image with Fastlane preinstalled but I wanted to be explicit
-  android-beta:
-    <<: *android_defaults 
+          name: Run tests
+          command: yarn run test
+
+  android-build-and-test:
+    working_directory: ~/test/android
+    docker:
+      - image: circleci/android:api-29-node
     steps:
-      # Attach to workplace (there are our saved node_modules)...
+      - checkout:
+        path: ~/test
+
       - attach_workspace:
-          at: ~/darwin
-      # Optimize build.gradle because memory limitation on our CircleCI machine...
-      - run: 
-          name: "Optimize build.gradle for CI"
-          command: sed -i 's/2g/1g/' app/build.gradle
-      # Install Fastlane
-      - run:
-          name: Install Fastlane  
+        at: ~/test
+
+      - restore_cache:
+        key: bundle-v1-{{ checksum "Gemfile.lock" }}-{{ arch }}
+
+      - run : bundle install
+
+      - save_cache:
+        key: bundle-v1-{{ checksum "Gemfile.lock" }}-{{ arch }}
+        paths:
+          - vendor/bundle
+      - run : 
+          name: fastlane tests
           command: |
-            gem install fastlane -NV
-      # Update Fastlane
-      - run:
-          name: Bundle update
-          command: bundle update
-      # Run our Andorid deploy task
-      - run:
-          name: Fastlane 
-          command: bundle exec fastlane beta
-    # steps:
-    #   - checkout
-    #   - restore_cache:
-    #       key: yarn-v1-{{ checksum "yarn.lock" }}-{{ arch }}
-    #   - restore_cache:
-    #       key: node-v1-{{ checksum "package.json" }}-{{ arch }}
-    #   - run:
-    #       name: Install Dependencies
-    #       command: yarn install
-    #   - save_cache:
-    #       key: yarn-v1-{{ checksum "yarn.lock" }}-{{ arch }}
-    #       paths:
-    #         - ~/.cache/yarn
-    #   - save_cache:
-    #       key: node-v1-{{ checksum "package.json" }}-{{ arch }}
-    #       paths:
-    #         - node_modules
-    #   - run:
-    #       name: Run tests
-    #       command: yarn run test
-
-  # android-build-and-test:
-  #   working_directory: ~/test/android
-  #   docker:
-  #     - image: circleci/android:api-29-node
-  #   steps:
-  #     - checkout:
-  #       path: ~/test
-
-  #     - attach_workspace:
-  #       at: ~/test
-
-  #     - restore_cache:
-  #       key: bundle-v1-{{ checksum "Gemfile.lock" }}-{{ arch }}
-
-  #     - run : bundle install
-
-  #     - save_cache:
-  #       key: bundle-v1-{{ checksum "Gemfile.lock" }}-{{ arch }}
-  #       paths:
-  #         - vendor/bundle
-  #     - run : 
-  #         name: fastlane tests
-  #         command: |
-  #           mkdir -p test-results/fastlane
-  #           bundle exec fastlane test
-  #           mv fastlane/report.xml test-results/fastlane
+            mkdir -p test-results/fastlane
+            bundle exec fastlane test
+            mv fastlane/report.xml test-results/fastlane
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
-  test:
-    # ...jobs...
+  node-android-ios:
     jobs:
-      - install-dependencies
-      # If it succeeded...
-      # Run ESlint...
-      - lint:
-          requires:
-            - install-dependencies
-            # Run FlowType check...
-      - flow:
-          requires:
-            - install-dependencies
-      # Run Jest unit tests...
-      - unit-tests:
-          requires:
-            - install-dependencies
-
-            # Deploy iOS...
-      - ios-beta:
-          requires: 
-            - install-dependencies
-            - unit-tests
-          filters:
-            branches:
-              only: master
-      # Deploy Android...
-      - android-beta:
-          requires: 
-            - install-dependencies
-            - unit-tests
-          filters:
-            branches:
-              only: master
+      - node
       
