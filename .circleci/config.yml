@@ -3,7 +3,7 @@
 version: 2.1
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
-  defaults: &defaults
+  defaults: defaults
     working_directory: ~/project
     # Specify the execution environment.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
@@ -12,7 +12,7 @@ version: 2.1
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     
-    android_defaults: &android_defaults
+    android_defaults: android_defaults
       working_directory: ~/project/android
       docker:
         - image: farwayer/react-native
@@ -23,7 +23,7 @@ version: 2.1
         - GRADLE_OPTS: '-Dorg.gradle.jvmargs="-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError"'
         - BUILD_THREADS: 2
 
-    ios_defaults: &ios_defaults
+    ios_defaults: ios_defaults
       working_directory: ~/project/ios
       macos:
           xcode: "12.1"
