@@ -34,32 +34,32 @@ jobs:
           name: Run tests
           command: yarn run test
 
-  android-build-and-test:
-    working_directory: ~/test/android
-    docker:
-      - image: circleci/android:api-29-node
-    steps:
-      - checkout:
-        path: ~/test
+  # android-build-and-test:
+  #   working_directory: ~/test/android
+  #   docker:
+  #     - image: circleci/android:api-29-node
+  #   steps:
+  #     - checkout:
+  #       path: ~/test
 
-      - attach_workspace:
-        at: ~/test
+  #     - attach_workspace:
+  #       at: ~/test
 
-      - restore_cache:
-        key: bundle-v1-{{ checksum "Gemfile.lock" }}-{{ arch }}
+  #     - restore_cache:
+  #       key: bundle-v1-{{ checksum "Gemfile.lock" }}-{{ arch }}
 
-      - run : bundle install
+  #     - run : bundle install
 
-      - save_cache:
-        key: bundle-v1-{{ checksum "Gemfile.lock" }}-{{ arch }}
-        paths:
-          - vendor/bundle
-      - run : 
-          name: fastlane tests
-          command: |
-            mkdir -p test-results/fastlane
-            bundle exec fastlane test
-            mv fastlane/report.xml test-results/fastlane
+  #     - save_cache:
+  #       key: bundle-v1-{{ checksum "Gemfile.lock" }}-{{ arch }}
+  #       paths:
+  #         - vendor/bundle
+  #     - run : 
+  #         name: fastlane tests
+  #         command: |
+  #           mkdir -p test-results/fastlane
+  #           bundle exec fastlane test
+  #           mv fastlane/report.xml test-results/fastlane
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
