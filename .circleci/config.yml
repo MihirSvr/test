@@ -1,11 +1,74 @@
+# # Use the latest 2.1 version of CircleCI pipeline process engine.
+# # See: https://circleci.com/docs/2.0/configuration-reference
+# version: 2.1
+# # Define a job to be invoked later in a workflow.
+# # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+# jobs:
+#   node:
+#     working_directory: ~/test
+#     # Specify the execution environment.
+#     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
+#     docker:
+#       - image: circleci/node:10.16.3
+#     # Add steps to the job
+#     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
+    
+#     steps:
+#       - checkout
+#       - restore_cache:
+#           key: v1-0-dependencies-{{ checksum "package.json" }}
+#       - run:
+#           name: Install Dependencies
+#           command: npx yarn install
+#       - save_cache:
+#           key: v1-0-dependencies-{{ checksum "package.json" }}
+#           paths:
+#             - node_modules
+#             - yarn.lock 
+#       - run:
+#           name: Run tests
+#           command: npx yarn run test
+
+#   # android-build-and-test:
+#   #   working_directory: ~/test/android
+#   #   docker:
+#   #     - image: circleci/android:api-29-node
+#   #   steps:
+#   #     - checkout:
+#   #       path: ~/test
+
+#   #     - attach_workspace:
+#   #       at: ~/test
+
+#   #     - restore_cache:
+#   #       key: bundle-v1-{{ checksum "Gemfile.lock" }}-{{ arch }}
+
+#   #     - run : bundle install
+
+#   #     - save_cache:
+#   #       key: bundle-v1-{{ checksum "Gemfile.lock" }}-{{ arch }}
+#   #       paths:
+#   #         - vendor/bundle
+#   #     - run : 
+#   #         name: fastlane tests
+#   #         command: |
+#   #           mkdir -p test-results/fastlane
+#   #           bundle exec fastlane test
+#   #           mv fastlane/report.xml test-results/fastlane
+# # Invoke jobs via workflows
+# # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+# workflows:
+#   test:
+#     jobs:
+#       - node
+      
 # Use the latest 2.1 version of CircleCI pipeline process engine.
 # See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  node:
-    working_directory: ~/test
+  build:
     # Specify the execution environment.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     docker:
@@ -16,54 +79,20 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: yarn-v1-{{ checksum "yarn.lock" }}
-      - restore_cache:
-          key: node-v1-{{ checksum "package.json" }}
+          key: dependency-cache-{{ checksum "package-lock.json" }}
       - run:
           name: Install Dependencies
-          command: npx yarn install
+          command: npm install
       - save_cache:
-          key: yarn-v1-{{ checksum "yarn.lock" }}
+          key: dependency-cache-{{ checksum "package-lock.json" }}
           paths:
-            - ~/.cache/yarn
-      - save_cache:
-          key: node-v1-{{ checksum "package.json" }}
-          paths:
-            - node_modules
+            - ./node_modules
       - run:
           name: Run tests
-          command: npx yarn run test
-
-  # android-build-and-test:
-  #   working_directory: ~/test/android
-  #   docker:
-  #     - image: circleci/android:api-29-node
-  #   steps:
-  #     - checkout:
-  #       path: ~/test
-
-  #     - attach_workspace:
-  #       at: ~/test
-
-  #     - restore_cache:
-  #       key: bundle-v1-{{ checksum "Gemfile.lock" }}-{{ arch }}
-
-  #     - run : bundle install
-
-  #     - save_cache:
-  #       key: bundle-v1-{{ checksum "Gemfile.lock" }}-{{ arch }}
-  #       paths:
-  #         - vendor/bundle
-  #     - run : 
-  #         name: fastlane tests
-  #         command: |
-  #           mkdir -p test-results/fastlane
-  #           bundle exec fastlane test
-  #           mv fastlane/report.xml test-results/fastlane
+          command: npm run test
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
-  checkout:
+  say-hello-workflow:
     jobs:
-      - node
-      
+      - build
