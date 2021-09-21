@@ -34,6 +34,68 @@ jobs:
         - MATCH_KEYCHAIN_NAME: "circle"
         - MATCH_KEYCHAIN_PASSWORD: "circle"
 
+  jobs:
+    # let's install our project's dependenices...
+    install-dependencies:
+      <<: *defaults
+      steps:
+        - checkout
+        - attach_workspace:
+            at: ~/project
+        # ...restore cache if there is any...
+        - restore_cache:
+            keys:
+            - v1-0-dependencies-{{ checksum "package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-0-dependencies-
+        # ... of not run yarn...
+        - run:
+            name: Install Dependencies
+            command: yarn
+        # ... cache the dependencies...
+        - save_cache:
+            key: v1-0-dependencies-{{ checksum "package.json" }}
+            paths:
+              - node_modules
+              - yarn.lock
+        # ...and persist to the workplace, because we want to access this within the workflows (other jobs, etc.)
+        - persist_to_workspace:
+            root: .
+            paths: .
+    # Introduce Flow job – let's staticaly check our code...
+    flow:
+      <<: *defaults
+      steps:
+        - attach_workspace:
+            at: ~/project
+        - run: yarn flow
+    # Let's check the code style as well...
+    lint:
+      <<: *defaults
+      steps:
+        - attach_workspace:
+          at: ~/project
+        - run: yarn lint
+    # Hell yeah! WE HAVE PLENTY OF THEM...
+    unit-tests:
+      <<: *defaults
+      steps:
+        - attach_workspace:
+            at: ~/project
+        - restore_cache:
+            keys:
+            - v1-0-jest-cache-{{ checksum "package.json" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-0-jest-cache-
+        - run: yarn test:ci
+        - save_cache:
+            key: v1-0-jest-cache-{{ checksum "package.json" }}
+            paths:
+              - .jestCache
+        - persist_to_workspace:
+            root: .
+            paths: .
+
   ##
   # This part is little bit tricky but still it's not a rocket sience...
   #
