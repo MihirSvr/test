@@ -21,7 +21,7 @@ jobs:
           key: node-v1-{{ checksum "package.json" }}-{{ arch }}
       - run:
           name: Install Dependencies
-          command: yarn install
+          command: yarn
       - save_cache:
           key: yarn-v1-{{ checksum "yarn.lock" }}-{{ arch }}
           paths:
